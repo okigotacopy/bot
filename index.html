@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Mini App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Добро пожаловать в Mini App!</h1>
+    <p>Ваш баланс: <span id="balance">0</span> USD</p>
+    <button onclick="openPayment()">Пополнить баланс</button>
+    <button onclick="closeApp()">Закрыть</button>
+
+    <script>
+        // Инициализация Telegram Web Apps
+        const tg = window.Telegram.WebApp;
+
+        // Показываем кнопку "Закрыть"
+        tg.MainButton.setText("Закрыть").show();
+
+        // Функция для открытия оплаты
+        function openPayment() {
+            tg.sendData(JSON.stringify({ type: "payment", amount: 10 })); // Отправляем данные в бота
+        }
+
+        // Функция для закрытия приложения
+        function closeApp() {
+            tg.close(); // Закрываем Mini App
+        }
+
+        // Обработка данных от бота
+        tg.onEvent("message", (data) => {
+            const message = JSON.parse(data);
+            if (message.type === "balance_update") {
+                document.getElementById("balance").innerText = message.balance; // Обновляем баланс
+            }
+        });
+
+        // Инициализация приложения
+        tg.ready();
+    </script>
+</body>
+</html>
