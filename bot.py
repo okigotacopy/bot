@@ -10,9 +10,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Инициализация бота и диспетчера
-API_TOKEN = '7883072129:AAFjqXv_IW6eYh4mvHEaVPv9ySdUI0owD8I'  # Ваш API-ключ
+API_TOKEN = '7827603551:AAG_Ui4ZiHWMc_arF5TQBStDO_cjQGnMIMU'  # Ваш API-ключ
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher()
+dp = Dispatcher()  # Инициализация диспетчера
 
 # Инициализация базы данных
 def init_db():
@@ -60,7 +60,7 @@ def init_db():
 init_db()
 
 # Юзернейм админа
-ADMIN_USERNAME = 'wwaswhere'  # Ваш юзернейм
+ADMIN_USERNAME = 'unitgramsatoshi318'  # Ваш юзернейм
 
 # Основное меню
 @dp.message(Command("start"))
@@ -267,12 +267,12 @@ async def buy_product(callback_query: types.CallbackQuery):
 
     conn = sqlite3.connect('bot_database.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT name, price FROM products WHERE id = ?', (product_id,))
+    cursor.execute('SELECT name, price, description FROM products WHERE id = ?', (product_id,))
     product = cursor.fetchone()
     conn.close()
 
     if product:
-        name, price = product
+        name, price, description = product
         user_id = callback_query.from_user.id
 
         # Проверяем баланс пользователя
@@ -292,8 +292,14 @@ async def buy_product(callback_query: types.CallbackQuery):
             conn.commit()
             conn.close()
 
+            # Отправляем описание товара
             await callback_query.answer()
-            await callback_query.message.answer(f"✅ Товар *{name}* успешно куплен!", parse_mode="Markdown")
+            await callback_query.message.answer(
+                f"✅ Товар *{name}* успешно куплен!\n\n"
+                f"📄 Описание товара:\n"
+                f"{description}",
+                parse_mode="Markdown"
+            )
         else:
             await callback_query.answer("❌ Недостаточно средств на балансе.")
     else:
