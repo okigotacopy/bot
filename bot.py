@@ -60,7 +60,7 @@ def init_db():
 init_db()
 
 # Юзернейм админа
-ADMIN_USERNAME = 'unitgramsatoshi318'  # Ваш юзернейм
+ADMIN_USERNAME = 'wwaswhere'  # Ваш юзернейм
 
 # Основное меню
 @dp.message(Command("start"))
