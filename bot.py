@@ -1,9 +1,9 @@
 import logging
+import sqlite3
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram import F
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-import sqlite3
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 # Инициализация бота и диспетчера
 API_TOKEN = '7827603551:AAG_Ui4ZiHWMc_arF5TQBStDO_cjQGnMIMU'  # Ваш API-ключ
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher()  # Инициализация диспетчера
+dp = Dispatcher()
 
-# Инициализация базы данных
+# Инициализация базы данных SQLite
 def init_db():
     conn = sqlite3.connect('bot_database.db')
     cursor = conn.cursor()
@@ -80,7 +80,6 @@ async def start(message: types.Message):
     keyboard.button(text="💳 Пополнить счет", callback_data='deposit')
     keyboard.button(text="🛒 Купить товар", callback_data='buy_product')
     keyboard.button(text="📦 История заказов", callback_data='order_history')
-    keyboard.button(text="📞 Поддержка", callback_data='support')
     keyboard.adjust(2)  # Две кнопки в строке
     await message.answer(
         "🌟 Добро пожаловать в магазин! 🌟\n"
@@ -158,15 +157,6 @@ async def order_history(callback_query: types.CallbackQuery):
     else:
         await callback_query.answer()
         await callback_query.message.answer('У вас пока нет заказов.')
-
-# Поддержка
-@dp.callback_query(F.data == 'support')
-async def support(callback_query: types.CallbackQuery):
-    await callback_query.answer()
-    await callback_query.message.answer(
-        f"📞 Свяжитесь с поддержкой: @{ADMIN_USERNAME}",
-        parse_mode="Markdown"
-    )
 
 # Меню покупки товаров
 @dp.callback_query(F.data == 'buy_product')
@@ -269,28 +259,25 @@ async def buy_product(callback_query: types.CallbackQuery):
     cursor = conn.cursor()
     cursor.execute('SELECT name, price, description FROM products WHERE id = ?', (product_id,))
     product = cursor.fetchone()
-    conn.close()
 
     if product:
         name, price, description = product
         user_id = callback_query.from_user.id
 
         # Проверяем баланс пользователя
-        conn = sqlite3.connect('bot_database.db')
-        cursor = conn.cursor()
         cursor.execute('SELECT balance FROM users WHERE user_id = ?', (user_id,))
         balance = cursor.fetchone()
-        conn.close()
 
         if balance and balance[0] >= price:
             # Списание средств и создание заказа
-            conn = sqlite3.connect('bot_database.db')
-            cursor = conn.cursor()
             cursor.execute('UPDATE users SET balance = balance - ? WHERE user_id = ?', (price, user_id))
             cursor.execute('INSERT INTO orders (user_id, product_id, quantity, total_price) VALUES (?, ?, 1, ?)',
-                          (user_id, product_id, price))
+                           (user_id, product_id, price))
+
+            # Удаляем товар из базы данных
+            cursor.execute('DELETE FROM products WHERE id = ?', (product_id,))
+
             conn.commit()
-            conn.close()
 
             # Отправляем описание товара
             await callback_query.answer()
@@ -304,6 +291,7 @@ async def buy_product(callback_query: types.CallbackQuery):
             await callback_query.answer("❌ Недостаточно средств на балансе.")
     else:
         await callback_query.answer("Товар не найден.")
+    conn.close()
 
 # Админка: просмотр всех пользователей
 @dp.message(Command("users"))
